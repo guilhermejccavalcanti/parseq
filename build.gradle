@@ -1,0 +1,131 @@
+// for all projects including the root project
+allprojects {
+  apply plugin: 'idea'
+  apply plugin: 'maven-publish'
+  // TODO NOT SURE NEED THIS
+  apply plugin: 'eclipse'
+  apply plugin: 'maven'
+  apply plugin: 'signing'
+
+  group = 'com.linkedin.parseq'
+  version = version
+
+  repositories {
+    mavenCentral()
+    mavenLocal()
+  }
+}
+
+
+// TODO if run this, all the subproject can not compile
+subprojects { // for all contrib projects'
+
+  if (it.name.startsWith('parseq')) {
+    apply plugin: 'java'
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+    archivesBaseName = project.name
+
+    dependencies {
+      compile group: 'com.linkedin.parseq', name: 'parseq', version: version
+      testCompile group: 'com.linkedin.parseq', name: 'parseq', version: version, classifier: 'test'
+    }
+
+    // package jar
+    task packageJavadoc(type: Jar, dependsOn: 'javadoc') {
+      from javadoc.destinationDir
+      classifier = 'javadoc'
+    }
+
+    task packageSources(type: Jar, dependsOn: 'classes') {
+      from sourceSets.main.allSource
+      classifier = 'sources'
+    }
+
+    // configure MANIFEST
+    jar {
+      manifest {
+        attributes("Created-By": "Gradle",
+            "Version": version,
+            "Built-By": sonatypeUsername,
+            "Build-JDK": JavaVersion.current())
+      }
+    }
+
+    javadoc {
+      options.use = true
+      options.author = true
+      options.bottom = "Copyright &#169; 2018. All rights reserved."
+      options.classpath += file("${project.projectDir.absolutePath}/src/main/java")
+      options.links("https://docs.oracle.com/javase/8/docs/api/")
+      options.addStringOption("charset", "UTF-8")
+    }
+
+    if (JavaVersion.current().isJava8Compatible()) {
+      allprojects {
+        tasks.withType(Javadoc) {
+          options.addStringOption('Xdoclint:none', '-quiet')
+        }
+      }
+    }
+
+    artifacts {
+      archives jar
+      archives packageJavadoc
+      archives packageSources
+    }
+
+    // sign up
+    signing {
+      required = { gradle.taskGraph.hasTask("uploadArchives") }
+      sign configurations.archives
+    }
+
+    // publish to maven
+    uploadArchives {
+      repositories {
+        mavenDeployer {
+          // pom signature
+          beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+          repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+            authentication(userName: sonatypeUsername, password: sonatypePassword)
+          }
+
+          snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots") {
+            authentication(userName: sonatypeUsername, password: sonatypePassword)
+          }
+
+          //TODO DELETE USE LOCAL REPO
+          repository(url: "file:/Users/jguan/Desktop/exper") {
+            authentication(userName: sonatypeUsername, password: sonatypePassword)
+          }
+
+
+          pom.project {
+            name project.name
+            packaging 'jar'
+            url 'http://github.com/linkedin/parseq'
+
+            scm {
+              url 'git@github.com:linkedin/parseq.git'
+              connection 'scm:git:git@github.com:linkedin/parseq.git'
+              developerConnection 'scm:git:git@github.com:linkedin/parseq.git'
+            }
+
+            licenses {
+              license {
+                name 'The Apache Software License, Version 2.0'
+                url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                distribution 'repo'
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+

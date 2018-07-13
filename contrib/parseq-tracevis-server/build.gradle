@@ -1,0 +1,55 @@
+description = """Serves tracevis tool capable of rendering graphviz diagrams"""
+
+def jettyVersion = '9.3.0.v20150612'
+
+configurations {
+  tracevisTarGz
+}
+
+dependencies {
+    //TODO DELETE when the core part migration is ready
+    //compile group: 'com.linkedin.parseq', name: 'parseq', version:'2.6.32'
+    //TODO USE compile project("...") instead
+    compile group: 'com.linkedin.parseq', name: 'parseq-exec', version: version
+    compile group: 'com.linkedin.parseq', name: 'parseq-http-client', version: version
+    tracevisTarGz group: 'com.linkedin.parseq', name: 'parseq-tracevis', version: version, ext: 'tar.gz'
+    compile group: 'org.eclipse.jetty', name: 'jetty-server', version: jettyVersion
+    compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version: jettyVersion
+    compile group: 'org.slf4j', name: 'slf4j-simple', version:'1.7.12'
+}
+
+task fatJar(type: Jar) {
+  classifier = 'jar-with-dependencies'
+  from configurations.tracevisTarGz.collect { it.isDirectory() ? it : tarTree(it) }
+  from configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+
+  with jar
+  manifest {
+    attributes("Created-By": "Gradle",
+        "Version": version,
+        "Built-By": sonatypeUsername,
+        "Build-JDK": JavaVersion.current())
+    attributes 'Main-Class': 'com.linkedin.parseq.TracevisServerJarMain'
+  }
+}
+
+artifacts {
+  archives fatJar
+}
+
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+      pom.project {
+        developers {
+          developer {
+            id 'jodzga'
+            name 'Jaroslaw Odzga'
+            email 'jodzga@linkedin.com'
+          }
+        }
+      }
+    }
+  }
+}

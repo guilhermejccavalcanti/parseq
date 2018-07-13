@@ -1,0 +1,47 @@
+description = """Set of benchmarks for ParSeq"""
+
+dependencies {
+    compile group: 'org.hdrhistogram', name: 'HdrHistogram', version:'2.1.8'
+    compile group: 'org.slf4j', name: 'slf4j-simple', version:'1.7.12'
+    compile project(":contrib:parseq-batching")
+}
+
+
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+      pom.project {
+        developers {
+          developer {
+            id 'jodzga'
+            name 'Jaroslaw Odzga'
+            email 'jodzga@linkedin.com'
+          }
+        }
+      }
+    }
+  }
+}
+
+
+task fatJar(type: Jar) {
+  classifier = 'jar-with-dependencies'
+  from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+  with jar
+  manifest {
+    attributes("Created-By": "Gradle",
+        "Version": version,
+        "Built-By": sonatypeUsername,
+        "Build-JDK": JavaVersion.current())
+    attributes 'Main-Class': 'com.linkedin.parseq.PerfLarge'
+  }
+}
+
+
+artifacts {
+  archives fatJar
+}
+
+// TODO DELETE
+//build.dependsOn fatJar

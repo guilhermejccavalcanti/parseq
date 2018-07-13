@@ -1,0 +1,16 @@
+rootProject.name = 'parseq'
+
+// include the sub-projects into this multiple project
+include 'contrib:parseq-batching'
+include 'contrib:parseq-benchmark'
+include 'contrib:parseq-examples'
+// TODO not include parseq-examples and parseq-legacy-examples
+include 'contrib:parseq-exec'
+include 'contrib:parseq-http-client'
+include 'contrib:parseq-lambda-names' //shadow jar
+include 'contrib:parseq-legacy-examples'
+include 'contrib:parseq-restli-client'
+include 'contrib:parseq-tracevis-server'
+include 'contrib:parseq-zk-client'
+include 'tools:tracevis'
+
