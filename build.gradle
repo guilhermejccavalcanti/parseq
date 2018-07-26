@@ -151,9 +151,3 @@ task runTracevisServer (dependsOn:':parseq-tracevis-server:build') << {
     logger.error('Can not find dot tools, please install it or check the docLocation!')
   }
 }
-
-
-task wrapper(type: Wrapper) {
-  gradleVersion = '4.8'
-  description 'Generates the Gradle wrapper scripts'
-}
