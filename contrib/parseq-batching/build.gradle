@@ -1,12 +1,9 @@
 description = """Provides convenient API for creating automatically batched tasks"""
 
+
 dependencies {
-  //TODO delete when the core part migration is ready
-  // compile group: 'com.linkedin.parseq', name: 'parseq', version:'2.6.32'
   compile group: 'org.hdrhistogram', name: 'HdrHistogram', version:'2.1.8'
   testCompile group: 'org.testng', name: 'testng', version:'6.9.9'
-  //TODO delete when the core part migration is ready
-  //testCompile group: 'com.linkedin.parseq', name: 'parseq', version:'2.6.32', classifier:'test'
   testCompile group: 'org.slf4j', name: 'slf4j-simple', version:'1.7.12'
 }
 

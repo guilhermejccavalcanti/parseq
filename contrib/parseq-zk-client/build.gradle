@@ -2,12 +2,8 @@ description = """Integrates ParSeq with Apache ZooKeeper Library"""
 
 
 dependencies {
-  // TODO DELETE when the core part migration is ready
-  //compile group: 'com.linkedin.parseq', name: 'parseq', version:'2.6.32'
   compile group: 'org.apache.zookeeper', name: 'zookeeper', version:'3.4.6'
   testCompile group: 'org.testng', name: 'testng', version:'6.9.9'
-  // TODO DELETE when the core part migration is ready
-  //testCompile group: 'com.linkedin.parseq', name: 'parseq', version:'2.6.32', classifier:'test'
   testCompile group: 'com.linkedin.pegasus', name: 'd2', version:'2.6.0'
 }
 
@@ -23,7 +19,7 @@ uploadArchives {
             email 'axu@linkedin.com'
           }
         }
-    }
+      }
     }
   }
 }

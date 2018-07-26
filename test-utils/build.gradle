@@ -1,0 +1,57 @@
+description = '''ParSeq test utility'''
+
+archivesBaseName = 'parseq'
+
+
+dependencies {
+  compile project(":parseq-tracevis-server")
+  compile group: "org.testng", name: "testng", version: "6.9.9"
+  testCompile group: "org.testng", name: "testng", version: "6.9.9"
+  testCompile group: "org.slf4j", name: "slf4j-log4j12", version: "1.7.25"
+}
+
+configurations {
+  testArtifacts
+}
+
+build.dependsOn(":core:compileJava")
+
+configurations.archives.getArtifacts().clear()
+
+// package jar
+task testJar(type: Jar) {
+  from sourceSets.main.output
+}
+
+task packageTestJar(type: Jar) {
+  from sourceSets.main.output
+  classifier = 'test'
+}
+
+task packageTestJavadoc(type: Jar, dependsOn: 'javadoc') {
+  from javadoc.destinationDir
+  classifier = 'test-javadoc'
+}
+
+task packageTestSources(type: Jar, dependsOn: 'classes') {
+  from sourceSets.main.allSource
+  classifier = 'test-sources'
+}
+
+artifacts {
+  testArtifacts testJar
+  archives packageTestJar
+  archives packageTestJavadoc
+  archives packageTestSources
+}
+
+// publish to maven
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      pom.artifactId = 'parseq'
+      // pom signature
+      beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+    }
+  }
+}

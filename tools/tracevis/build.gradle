@@ -1,0 +1,265 @@
+ext {
+  // Binaries we use
+  NPM = 'npm'
+
+  // Command
+  BROWSERIFY = "./node_modules/browserify/bin/cmd.js"
+  ISTANBUL = './node_modules/istanbul/lib/cli.js'
+  JSHINT = './node_modules/jshint/bin/jshint'
+  MOCHA = './node_modules/mocha/bin/_mocha'
+  PHANTOMJS = './node_modules/phantomjs/bin/phantomjs'
+  UGLIFY = './node_modules/uglify-js/bin/uglifyjs'
+
+  //Module
+  MODULE = 'parseq-tracevis'
+  MODULE_JS = "${MODULE}.js"
+  MODULE_MIN_JS = "${MODULE}.min.js"
+  MODULE_TAR_GZ = "${MODULE}.tar.gz"
+
+  // build directory
+  TEST_UNIT_COV = 'build/coverage/unit'
+  TEST_INT_COV = 'build/coverage/int'
+  TEST_ALL_COV = 'build/coverage/all'
+}
+
+configurations {
+  tracevisArtifacts
+}
+
+
+task node_modules(type: Exec) { // install packages
+  workingDir projectDir
+
+  //on linux
+  commandLine  "${NPM}", 'install'
+}
+
+
+task all {
+  dependsOn 'makeBuild'
+  dependsOn 'makeTest'
+}
+
+task makeBuild {
+  dependsOn 'buildModuleJS'
+  dependsOn 'buildModuleMinJS'
+  dependsOn 'buildTracevis'
+}
+
+task buildModuleJS(type: Exec, dependsOn: 'node_modules') {
+  workingDir projectDir
+  mkdir 'build'
+  //on linux
+  commandLine  "/bin/sh", "-c","${BROWSERIFY} -x ${projectDir}/node_modules/d3/index-browserify.js browser.js > ${projectDir}/build/${MODULE_JS}"
+}
+
+
+task buildModuleMinJS(type: Exec, dependsOn: 'buildModuleJS') {
+  workingDir projectDir
+
+  //on linux
+  commandLine  "/bin/sh", "-c","${UGLIFY} ${projectDir}/build/${MODULE_JS} > ${projectDir}/build/${MODULE_MIN_JS}"
+}
+
+
+task buildTracevis(type: Exec, dependsOn: 'copyTracevis') {
+  workingDir projectDir
+
+  //on linux
+  commandLine  "/bin/sh", "-c", "sed -e 's|vX.X.X|v${version}|' -e 's|node_modules/d3/d3.js|js/d3.min.js|' -e 's|node_modules/svg-injector/svg-injector.js|js/svg-injector.min.js|' -e 's|node_modules/svg-pan-zoom/dist/svg-pan-zoom.js|js/svg-pan-zoom.min.js|' -e 's|build/${MODULE_JS}|js/${MODULE_MIN_JS}|' trace.html > build/tracevis/trace.html"
+}
+
+task copyTracevis(type: Copy, dependsOn: 'buildTracevisJS') {
+  from('bootstrap') {
+    include '*'
+    include '**/*'
+    include '**/**/*'
+    into 'bootstrap'
+  }
+  from("css") {
+    include '*'
+    into 'css'
+  }
+  from("${projectDir}/img") {
+    include '*'
+    into 'img'
+  }
+
+  from("./") {
+    include 'trace.html'
+  }
+  into 'build/tracevis'
+}
+
+
+task buildTracevisJS(type: Copy, dependsOn: ['buildModuleJS', 'buildModuleMinJS']){
+  delete "${projectDir}/build/tracevis/js"
+  from("${projectDir}/build/") {
+    include '*.js'
+  }
+
+  from(".") {
+    include 'node_modules/d3/d3.min.js'
+    include 'js/d3.slider.js'
+    include 'node_modules/svg-injector/dist/svg-injector.min.js'
+    include 'node_modules/svg-injector/dist/svg-injector.map.js'
+    include 'node_modules/svg-pan-zoom/dist/svg-pan-zoom.min.js'
+  }
+
+  into 'build/tracevis/js'
+  eachFile { fileCopyDetails ->
+    fileCopyDetails.path = fileCopyDetails.path.replaceAll("node_modules/(.*)/(.*)", '$2')
+    fileCopyDetails.path = fileCopyDetails.path.replaceAll("js/(.*)", '$1')
+  }
+  includeEmptyDirs = false
+}
+
+
+task makeTest(dependsOn: 'coverage') {}
+
+task coverage(dependsOn: 'testAllCov') {}
+
+task testUnit(dependsOn:['testUnitCov', 'lint']) {}
+
+
+task testAllCov(type: Exec, dependsOn: ['testUnitCov', 'testIntCov']) {
+  delete "${projectDir}/${TEST_ALL_COV}"
+  workingDir projectDir
+  mkdir "${projectDir}/${TEST_ALL_COV}"
+
+  //on linux
+  commandLine  "/bin/sh", "-c","${ISTANBUL} report --root build/coverage --dir ${TEST_ALL_COV} lcov"
+}
+
+
+task testUnitCov(type: Exec,dependsOn: 'node_modules') {
+  delete "${projectDir}/${TEST_UNIT_COV}"
+  workingDir projectDir
+
+  // on linux
+  commandLine "/bin/sh", "-c", "${MOCHA} \$(MOCHA_OPTS) test/unit"
+
+  // Instanbul instrumentation appears to mess up stack traces, so we run it after
+  // ensuring the tests are passing
+  doLast {
+    exec {
+     commandLine  "/bin/sh", "-c","${ISTANBUL} cover ${MOCHA} --dir ${TEST_UNIT_COV} -x **/lib/render/** --report none -- \$(MOCHA_OPTS) test/unit"
+    }
+  }
+}
+
+task testIntCov(type: Exec, dependsOn: 'buildInstrumentationModule'){
+  workingDir projectDir
+
+  //on linux
+  commandLine  "/bin/sh", "-c","${PHANTOMJS} test/int"
+  commandLine  "/bin/sh", "-c", "touch ${TEST_INT_COV}"
+}
+
+task buildInstrumentationLib(type: Exec) {
+  delete "${projectDir}/build/instrumentation/lib"
+
+  workingDir projectDir
+
+  //on linux
+  commandLine  "/bin/sh", "-c","${ISTANBUL} instrument lib --output ${projectDir}/build/instrumentation/lib"
+}
+
+
+task buildInstrumentationCopyJSFiles(type: Copy) {
+  from(".") {
+    include "*.js"
+  }
+  into "build/instrumentation"
+}
+
+task buildInstrumentationModuleJs(type: Exec, dependsOn: ['node_modules', 'buildInstrumentationLib', 'buildInstrumentationCopyJSFiles']) {
+  workingDir projectDir
+
+  //on linux
+  commandLine  "/bin/sh", "-c","${BROWSERIFY} -x node_modules/d3/index-browserify.js build/instrumentation/browser.js > build/instrumentation/${MODULE_JS}"
+}
+
+task buildInstrumentationModule(type: Copy, dependsOn: ['buildTracevis', 'buildInstrumentationModuleJs']) {
+  def folder = "${projectDir}/build/instrumentation/${MODULE}"
+  delete folder
+
+  from("build/tracevis") {
+    include '*'
+    include '**/*'
+    include '**/**/*'
+    include '**/**/**/*'
+  }
+
+  from("build/instrumentation") {
+    include "${MODULE_JS}"
+    into "js/"
+    rename "${MODULE_JS}", "${MODULE_MIN_JS}"
+  }
+
+  into folder
+}
+
+task lint(dependsOn: 'buildLint') {}
+
+task buildLint(type: Exec) {
+  workingDir projectDir
+
+  //on linux
+  commandLine  "/bin/sh", "-c", "${JSHINT} lib/ test/"
+  commandLine  "/bin/sh", "-c", "touch build/lint"
+}
+
+// package the tar.gz for maven publishing
+task makeDist(type: Tar, dependsOn:['makeBuild', 'makeTest']) {
+  extension = 'tar.gz'
+  baseName = 'parseq-tracevis'
+  compression = Compression.GZIP
+  from "${projectDir}/build/tracevis"
+  into "tracevis"
+}
+
+task makeClean(type: Delete){
+  delete 'build'
+  followSymlinks = true
+}
+
+build.dependsOn makeDist
+clean.dependsOn 'makeClean'
+
+artifacts {
+  tracevisArtifacts makeDist
+  archives makeDist
+}
+
+configurations.archives.artifacts.with { archives ->
+  archives.findAll { !(it.file =~ 'tar.gz') }.each { remove(it) }
+}
+
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      pom.artifactId = 'parseq-tracevis'
+      beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+      pom.project {
+        developers {
+          developer {
+            id 'cpettitt'
+            name 'Chris Pettitt'
+            email 'cpettitt@linkedin.com'
+          }
+          developer {
+            id 'ckchan'
+            name 'Chi Kit Chan'
+            email 'ckchan@linkedin.com<'
+          }
+          developer {
+            id 'jodzga'
+            name 'Jaroslaw Odzga'
+            email 'jodzga@linkedin.com'
+          }
+        }
+      }
+    }
+  }
+}

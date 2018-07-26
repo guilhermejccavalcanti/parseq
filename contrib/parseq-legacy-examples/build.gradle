@@ -1,19 +1,1 @@
-apply plugin: 'java'
-apply plugin: 'maven'
-
-group = 'com.linkedin.parseq'
-version = '2.6.34'
-
 description = """parseq-legacy-examples"""
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
-
-repositories {
-     maven { url "http://repo.maven.apache.org/maven2" }
-}
-
-dependencies {
-    compile group: 'com.linkedin.parseq', name: 'parseq', version: version
-}

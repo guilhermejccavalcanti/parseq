@@ -1,16 +1,27 @@
 rootProject.name = 'parseq'
 
-// include the sub-projects into this multiple project
-include 'contrib:parseq-batching'
-include 'contrib:parseq-benchmark'
-include 'contrib:parseq-examples'
-// TODO not include parseq-examples and parseq-legacy-examples
-include 'contrib:parseq-exec'
-include 'contrib:parseq-http-client'
-include 'contrib:parseq-lambda-names' //shadow jar
-include 'contrib:parseq-legacy-examples'
-include 'contrib:parseq-restli-client'
-include 'contrib:parseq-tracevis-server'
-include 'contrib:parseq-zk-client'
-include 'tools:tracevis'
+def modules = [ /* the name of the modules to use */
+    'parseq-batching',
+    'parseq-benchmark',
+    'parseq-examples',
+    'parseq-exec',
+    'parseq-http-client',
+    'parseq-lambda-names', //shadow jar
+    'parseq-legacy-examples',
+    'parseq-restli-client',
+    'parseq-tracevis-server',
+    'parseq-zk-client',
+    'core', // core part code
+    'test-utils', // test utility for core part code test
+    'tracevis' // trace visualization tools
+]
 
+
+modules.each { module ->
+  include "${module}"
+  if (file(module).name.startsWith('parseq')) {
+    project(":${module}").projectDir = file("contrib/${module}")
+  }
+}
+
+project(":tracevis").projectDir = file("tools/tracevis")

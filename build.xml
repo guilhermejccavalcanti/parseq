@@ -2,11 +2,12 @@
 <project xmlns:ivy="antlib:org.apache.ivy.ant" name="parseq" default="build" basedir=".">
   <description>ParSeq Project</description>
 
-  <property name="src.dir" value="${basedir}/src" />
-  <property name="src.fmpp.dir" location="${basedir}/fmpp/templates" />
-  <property name="src.fmpp.data" location="${basedir}/fmpp/data" />
-  <property name="test.dir" value="${basedir}/test" />
-  <property name="src.test.dir" value="${basedir}/src-test" />
+  <property name="src.dir" value="${basedir}/core/src/main/java" />
+  <property name="src.fmpp.dir" location="${basedir}/core/src/main/codegen/templates" />
+  <property name="src.fmpp.data" location="${basedir}/core/src/main/codegen/data" />
+  <property name="test.dir" value="${basedir}/core/src/test/java" />
+  <property name="src.test.dir" value="${basedir}/test-utils/src/main/java" />
+
   <property name="tools.dir" value="${basedir}/tools" />
   <property name="contrib.dir" value="${basedir}/contrib" />
   <property name="build.dir" value="${basedir}/build" />

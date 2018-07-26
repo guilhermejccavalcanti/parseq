@@ -1,4 +1,3 @@
-apply plugin: 'java'
 apply plugin: 'com.github.johnrengelman.shadow'
 
 
@@ -9,9 +8,6 @@ dependencies {
   compile group: 'com.ea.agentloader', name: 'ea-agent-loader', version:'1.0.2'
   compile group: 'org.ow2.asm', name: 'asm-all', version:'5.1'
   testCompile group: 'org.testng', name: 'testng', version:'6.9.9'
-  // TODO DELETE when the core part migration is ready
-  // compile group: 'com.linkedin.parseq', name: 'parseq', version:'2.6.32'
-  // testCompile group: 'com.linkedin.parseq', name: 'parseq', version:'2.6.32', classifier:'test'
 }
 
 buildscript {

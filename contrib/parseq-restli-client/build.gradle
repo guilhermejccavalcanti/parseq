@@ -2,23 +2,21 @@ apply plugin: 'antlr'
 
 description = """Provides convenient API for creating automatically batched tasks"""
 
+
 dependencies {
-    // TODO DELETE when the core part migration is ready
-    //compile group: 'com.linkedin.parseq', name: 'parseq', version:'2.6.34'
-    // TODO USE compile project("...") instead
-    compile group: 'com.linkedin.parseq', name: 'parseq-batching', version:'2.6.34'
+    compile project(":parseq-batching")
     compile group: 'com.linkedin.pegasus', name: 'pegasus-common', version:'19.0.3'
     compile group: 'com.linkedin.pegasus', name: 'restli-common', version:'19.0.3'
     compile group: 'com.linkedin.pegasus', name: 'restli-client', version:'19.0.3'
     compile group: 'com.linkedin.pegasus', name: 'r2-core', version:'19.0.3'
     compile group: 'org.hdrhistogram', name: 'HdrHistogram', version:'2.1.8'
     compile group: 'org.antlr', name: 'antlr4-runtime', version:'4.5'
+
     testCompile group: 'org.testng', name: 'testng', version:'6.9.9'
     testCompile group: 'org.slf4j', name: 'slf4j-simple', version:'1.7.12'
-    // TODO DELETE when the core part migration is ready
-    //testCompile group: 'com.linkedin.parseq', name: 'parseq', version:'2.6.34', classifier:'test'
     testCompile group: 'com.linkedin.pegasus', name: 'restli-int-test-server', version:'11.0.0'
     testCompile group: 'com.linkedin.pegasus', name: 'r2-netty', version:'11.0.0'
+
     antlr "org.antlr:antlr4:4.5"
 }
 
@@ -43,5 +41,3 @@ uploadArchives {
     }
   }
 }
-
-

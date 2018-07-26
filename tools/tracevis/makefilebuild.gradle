@@ -1,0 +1,66 @@
+task makeTest(type: Exec) {
+  workingDir projectDir
+  commandLine 'make', 'test'
+}
+
+task makeBuild(type: Exec) {
+  workingDir projectDir
+  commandLine 'make', 'build/tracevis'
+}
+
+task makeDist(type: Tar) {
+  dependsOn makeTest
+  dependsOn makeBuild
+
+  extension = 'tar.gz'
+  baseName = 'parseq-tracevis'
+  compression = Compression.GZIP
+  from "${projectDir}/build/tracevis"
+}
+
+clean.dependsOn 'makeClean'
+task makeClean(type: Exec){
+  workingDir projectDir
+
+  //on linux
+  commandLine 'make', 'clean'
+}
+
+
+build.dependsOn makeDist
+
+artifacts {
+  archives makeDist
+}
+
+configurations.archives.artifacts.with { archives ->
+  archives.findAll { !(it.file =~ 'tar.gz') }.each { remove(it) }
+}
+
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      pom.artifactId = 'parseq-tracevis'
+      beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+      pom.project {
+        developers {
+          developer {
+            id 'cpettitt'
+            name 'Chris Pettitt'
+            email 'cpettitt@linkedin.com'
+          }
+          developer {
+            id 'ckchan'
+            name 'Chi Kit Chan'
+            email 'ckchan@linkedin.com<'
+          }
+          developer {
+            id 'jodzga'
+            name 'Jaroslaw Odzga'
+            email 'jodzga@linkedin.com'
+          }
+        }
+      }
+    }
+  }
+}

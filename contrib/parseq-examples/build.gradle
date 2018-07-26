@@ -1,33 +1,8 @@
-apply plugin: 'java'
-apply plugin: 'maven'
+description = """parseq-examples is for illustrating how to use parseq API"""
 
-group = 'com.linkedin.parseq'
-version = '2.6.32'
-
-description = """parseq-examples"""
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-tasks.withType(JavaCompile) {
-	options.encoding = 'UTF-8'
-}
-
-repositories {
-  mavenCentral()
-}
 
 dependencies {
-//  compile project(":contrib:parseq-http-client")
-//  compile project(":contrib:parseq-batching")
-//  compile project(":contrib:parseq-lambda-names")
-//    compile group: 'com.linkedin.parseq', name: 'parseq', version: version
-//
-//    compile group: 'com.linkedin.parseq', name: 'parseq-http-client', version: version
-//    compile group: 'com.linkedin.parseq', name: 'parseq-batching', version: version
-//    compile group: 'com.linkedin.parseq', name: 'parseq-lambda-names', version: version
-
-  compile group: 'com.linkedin.parseq', name: 'parseq', version:'2.6.34'
-  compile group: 'com.linkedin.parseq', name: 'parseq-http-client', version:'2.6.34'
-  compile group: 'com.linkedin.parseq', name: 'parseq-batching', version:'2.6.34'
-  compile group: 'com.linkedin.parseq', name: 'parseq-lambda-names', version:'2.6.34'
+  compile project(":parseq-http-client")
+  compile project(":parseq-batching")
+  compile project(":parseq-lambda-names")
 }
