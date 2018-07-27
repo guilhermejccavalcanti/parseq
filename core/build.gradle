@@ -2,6 +2,7 @@ description = '''ParSeq project core code'''
 
 archivesBaseName = 'parseq'
 
+//TODO avoid buildscript dependency
 buildscript {
   repositories {
     maven {
@@ -76,7 +77,7 @@ uploadArchives {
 
 
 // When update the template and data in codegen, need to run this task before gradle build task
-task generateFmppSources() {
+task generateFmppSources {
   description 'Configure Freemarker to generate TupleNtask, ParNTask code in source folder.'
   doLast {
     println "Generating sources...."
