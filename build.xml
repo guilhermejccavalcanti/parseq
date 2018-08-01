@@ -2,14 +2,14 @@
 <project xmlns:ivy="antlib:org.apache.ivy.ant" name="parseq" default="build" basedir=".">
   <description>ParSeq Project</description>
 
-  <property name="src.dir" value="${basedir}/core/src/main/java" />
-  <property name="src.fmpp.dir" location="${basedir}/core/src/main/codegen/templates" />
-  <property name="src.fmpp.data" location="${basedir}/core/src/main/codegen/data" />
-  <property name="test.dir" value="${basedir}/core/src/test/java" />
-  <property name="src.test.dir" value="${basedir}/test-utils/src/main/java" />
+  <property name="src.dir" value="${basedir}/subprojects/parseq/src/main/java" />
+  <property name="src.fmpp.dir" location="${basedir}/subprojects/parseq/src/main/codegen/templates" />
+  <property name="src.fmpp.data" location="${basedir}/subprojects/parseq/src/main/codegen/data" />
+  <property name="test.dir" value="${basedir}/subprojects/parseq/src/test/java" />
+  <property name="src.test.dir" value="${basedir}/subprojects/parseq/src/test-utils/java" />
 
-  <property name="tools.dir" value="${basedir}/tools" />
-  <property name="contrib.dir" value="${basedir}/contrib" />
+  <property name="tools.dir" value="${basedir}/subprojects" />
+  <property name="contrib.dir" value="${basedir}/subprojects" />
   <property name="build.dir" value="${basedir}/build" />
   <property name="src.build.dir" value="${build.dir}/src" />
   <property name="lib.build.dir" value="${build.dir}/lib" />
@@ -144,7 +144,7 @@
   </target>
 
   <target name="tar-tracevis" depends="prepare, dist-tracevis" description="Creates a tarball of the tracevis tool">
-    <copy file="${tools.dir}/tracevis/dist/parseq-tracevis.tar.gz" tofile="${dist.dir}/parseq-tracevis-${version}.tar.gz"/>
+    <copy file="${tools.dir}/tool-tracevis/dist/parseq-tracevis.tar.gz" tofile="${dist.dir}/parseq-tracevis-${version}.tar.gz"/>
   </target>
 
   <target name="doc" description="Build the javadoc." depends="build-src">
@@ -255,7 +255,7 @@
   <target name="clean" description="Cleans build and dist dirs">
     <delete dir="${build.dir}" />
     <delete dir="${dist.dir}" />
-    <make dir="${tools.dir}/tracevis" >
+    <make dir="${tools.dir}/tool-tracevis" >
       <args>
         <arg value="clean" />
       </args>
@@ -266,7 +266,7 @@
   </target>
 
   <target name="test-tracevis" unless="no.test.tracevis" description="Run visualization tests">
-    <make dir="${tools.dir}/tracevis">
+    <make dir="${tools.dir}/tool-tracevis">
       <args>
         <arg value="test" />
       </args>
@@ -274,7 +274,7 @@
   </target>
 
   <target name="dist-tracevis" description="Builds the tracevis package">
-    <make dir="${tools.dir}/tracevis">
+    <make dir="${tools.dir}/tool-tracevis">
       <args>
         <arg value="dist" />
       </args>

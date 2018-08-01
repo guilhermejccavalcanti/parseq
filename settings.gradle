@@ -11,17 +11,12 @@ def modules = [ /* the name of the modules to use */
     'parseq-restli-client',
     'parseq-tracevis-server',
     'parseq-zk-client',
-    'core', // core part code
-    'test-utils', // test utility for core part code test
-    'tracevis' // trace visualization tools
+    'parseq', // core part code, including test utility
+    'tool-tracevis' // trace visualization tools
 ]
 
 
 modules.each { module ->
   include "${module}"
-  if (file(module).name.startsWith('parseq')) {
-    project(":${module}").projectDir = file("contrib/${module}")
-  }
+    project(":${module}").projectDir = file("subprojects/${module}")
 }
-
-project(":tracevis").projectDir = file("tools/tracevis")

@@ -1,3 +1,32 @@
+description = '''A trace visualizer for ParSeq traces.'''
+
+apply plugin: 'com.moowork.node'
+
+node {
+  version = '6.11.2'
+  npmVersion = '3.10.10'
+  distBaseUrl = 'https://nodejs.org/dist'
+  download = true
+
+  // Set the work directory for unpacking node
+  workDir = file("${project.buildDir}/nodejs")
+
+  // Set the work directory for NPM
+  npmWorkDir = file("${project.buildDir}/npm")
+}
+
+buildscript {
+  repositories {
+    maven {
+      url "https://plugins.gradle.org/m2/"
+    }
+  }
+  dependencies {
+    classpath "com.moowork.gradle:gradle-node-plugin:1.2.0"
+    classpath "gradle.plugin.com.palantir.npmrun:gradle-npm-run-plugin:0.5.0"
+  }
+}
+
 ext {
   // Binaries we use
   NPM = 'npm'
@@ -27,12 +56,7 @@ configurations {
 }
 
 
-task node_modules(type: Exec) { // install packages
-  workingDir projectDir
-
-  //on linux
-  commandLine  "${NPM}", 'install'
-}
+task node_modules(dependsOn: ['npmSetup', 'npmInstall']) {} // install packages
 
 
 task all {
@@ -46,21 +70,29 @@ task makeBuild {
   dependsOn 'buildTracevis'
 }
 
-task buildModuleJS(type: Exec, dependsOn: 'node_modules') {
-  workingDir projectDir
-  mkdir 'build'
-  //on linux
-  commandLine  "/bin/sh", "-c","${BROWSERIFY} -x ${projectDir}/node_modules/d3/index-browserify.js browser.js > ${projectDir}/build/${MODULE_JS}"
+task buildModuleJS(type: NodeTask, dependsOn: 'node_modules') {
+  doFirst {
+    mkdir 'build'
+  }
+
+  script = file("${BROWSERIFY}")
+  args = ["-x", "${projectDir}/node_modules/d3/index-browserify.js", "browser.js"]
+  execOverrides {
+    it.ignoreExitValue = true
+    it.workingDir = projectDir
+    it.standardOutput = new FileOutputStream("${projectDir}/build/${MODULE_JS}")
+  }
 }
 
-
-task buildModuleMinJS(type: Exec, dependsOn: 'buildModuleJS') {
-  workingDir projectDir
-
-  //on linux
-  commandLine  "/bin/sh", "-c","${UGLIFY} ${projectDir}/build/${MODULE_JS} > ${projectDir}/build/${MODULE_MIN_JS}"
+task buildModuleMinJS(type: NodeTask, dependsOn: 'buildModuleJS') {
+  script = file("${UGLIFY}")
+  args = ["${projectDir}/build/${MODULE_JS}"]
+  execOverrides {
+    it.ignoreExitValue = true
+    it.workingDir = projectDir
+    it.standardOutput = new FileOutputStream("${projectDir}/build/${MODULE_MIN_JS}")
+  }
 }
-
 
 task buildTracevis(type: Exec, dependsOn: 'copyTracevis') {
   workingDir projectDir
@@ -93,7 +125,10 @@ task copyTracevis(type: Copy, dependsOn: 'buildTracevisJS') {
 
 
 task buildTracevisJS(type: Copy, dependsOn: ['buildModuleJS', 'buildModuleMinJS']){
-  delete "${projectDir}/build/tracevis/js"
+  doFirst{
+    delete "${projectDir}/build/tracevis/js"
+  }
+
   from("${projectDir}/build/") {
     include '*.js'
   }
@@ -122,49 +157,76 @@ task coverage(dependsOn: 'testAllCov') {}
 task testUnit(dependsOn:['testUnitCov', 'lint']) {}
 
 
-task testAllCov(type: Exec, dependsOn: ['testUnitCov', 'testIntCov']) {
-  delete "${projectDir}/${TEST_ALL_COV}"
-  workingDir projectDir
-  mkdir "${projectDir}/${TEST_ALL_COV}"
+task testAllCov(type: NodeTask, dependsOn: ['testUnitCov', 'testIntCov']) {
+  doFirst {
+    delete "${projectDir}/${TEST_ALL_COV}"
+    mkdir "${projectDir}/${TEST_ALL_COV}"
+  }
 
-  //on linux
-  commandLine  "/bin/sh", "-c","${ISTANBUL} report --root build/coverage --dir ${TEST_ALL_COV} lcov"
+  script = file("${ISTANBUL}")
+  args = ["report", "--root", "build/coverage", "--dir", "${TEST_ALL_COV}", "lcov"]
+  execOverrides {
+    it.workingDir = projectDir
+    it.ignoreExitValue = true
+  }
 }
 
+task testUnitPrep(type: NodeTask, dependsOn: 'node_modules') {
+  doFirst{
+    delete "${projectDir}/${TEST_UNIT_COV}"
+  }
 
-task testUnitCov(type: Exec,dependsOn: 'node_modules') {
-  delete "${projectDir}/${TEST_UNIT_COV}"
-  workingDir projectDir
+  script = file("${MOCHA}")
+  args = ["test/unit"]
+  execOverrides {
+    it.workingDir = projectDir
+    it.ignoreExitValue = true
+  }
+}
 
-  // on linux
-  commandLine "/bin/sh", "-c", "${MOCHA} \$(MOCHA_OPTS) test/unit"
-
+task testUnitCov(type: NodeTask, dependsOn: 'testUnitPrep') {
   // Instanbul instrumentation appears to mess up stack traces, so we run it after
   // ensuring the tests are passing
+  script = file("${ISTANBUL}")
+  args = ["cover", "${MOCHA}", "--dir","${TEST_UNIT_COV}", "-x", "**/lib/render/**", "--report none --", "test/unit"]
+  //ignoreExitValue true
+  execOverrides {
+    it.workingDir = projectDir
+    it.ignoreExitValue = true
+  }
+}
+
+task testIntCov(type: NodeTask, dependsOn: 'buildInstrumentationModule'){
+  doFirst {
+    mkdir 'build/coverage'
+  }
+
+  script = file("${PHANTOMJS}")
+  args = ["${projectDir}/test/int"]
+  execOverrides {
+    it.workingDir = projectDir
+    it.ignoreExitValue = true
+  }
+
   doLast {
     exec {
-     commandLine  "/bin/sh", "-c","${ISTANBUL} cover ${MOCHA} --dir ${TEST_UNIT_COV} -x **/lib/render/** --report none -- \$(MOCHA_OPTS) test/unit"
+      commandLine  "/bin/sh", "-c", "touch ${TEST_INT_COV}"
     }
   }
 }
 
-task testIntCov(type: Exec, dependsOn: 'buildInstrumentationModule'){
-  workingDir projectDir
+task buildInstrumentationLib(type: NodeTask) {
+  doFirst {
+    delete "${projectDir}/build/instrumentation/lib"
+  }
 
-  //on linux
-  commandLine  "/bin/sh", "-c","${PHANTOMJS} test/int"
-  commandLine  "/bin/sh", "-c", "touch ${TEST_INT_COV}"
+  script = file("${ISTANBUL}")
+  args = ["instrument", "lib", "--output", "${projectDir}/build/instrumentation/lib" ]
+  execOverrides {
+    it.ignoreExitValue = true
+    it.workingDir = projectDir
+  }
 }
-
-task buildInstrumentationLib(type: Exec) {
-  delete "${projectDir}/build/instrumentation/lib"
-
-  workingDir projectDir
-
-  //on linux
-  commandLine  "/bin/sh", "-c","${ISTANBUL} instrument lib --output ${projectDir}/build/instrumentation/lib"
-}
-
 
 task buildInstrumentationCopyJSFiles(type: Copy) {
   from(".") {
@@ -173,16 +235,21 @@ task buildInstrumentationCopyJSFiles(type: Copy) {
   into "build/instrumentation"
 }
 
-task buildInstrumentationModuleJs(type: Exec, dependsOn: ['node_modules', 'buildInstrumentationLib', 'buildInstrumentationCopyJSFiles']) {
-  workingDir projectDir
-
-  //on linux
-  commandLine  "/bin/sh", "-c","${BROWSERIFY} -x node_modules/d3/index-browserify.js build/instrumentation/browser.js > build/instrumentation/${MODULE_JS}"
+task buildInstrumentationModuleJs(type: NodeTask, dependsOn: ['node_modules', 'buildInstrumentationLib', 'buildInstrumentationCopyJSFiles']) {
+  script = file("${BROWSERIFY}")
+  args = ["-x", "node_modules/d3/index-browserify.js", "build/instrumentation/browser.js"]
+  execOverrides {
+    it.ignoreExitValue = true
+    it.workingDir = projectDir
+    it.standardOutput = new FileOutputStream("${projectDir}/build/instrumentation/${MODULE_JS}")
+  }
 }
 
 task buildInstrumentationModule(type: Copy, dependsOn: ['buildTracevis', 'buildInstrumentationModuleJs']) {
   def folder = "${projectDir}/build/instrumentation/${MODULE}"
-  delete folder
+  doFirst {
+    delete folder
+  }
 
   from("build/tracevis") {
     include '*'
@@ -219,13 +286,8 @@ task makeDist(type: Tar, dependsOn:['makeBuild', 'makeTest']) {
   into "tracevis"
 }
 
-task makeClean(type: Delete){
-  delete 'build'
-  followSymlinks = true
-}
 
 build.dependsOn makeDist
-clean.dependsOn 'makeClean'
 
 artifacts {
   tracevisArtifacts makeDist

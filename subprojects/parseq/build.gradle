@@ -21,12 +21,12 @@ buildscript {
 configurations {
   buildBootstrap {
     description "build time dependencies"
-    visible = false
+    //visible = false
   }
 
   bootstrap {
     description "bootstrapping dependencies"
-    visible = false
+    //visible = false
   }
 
   compile {
@@ -42,8 +42,10 @@ configurations {
   testCompile {
     description "compile classpath for source set 'test'"
     extendsFrom buildBootstrap
-    visible = false
+    //visible = false
   }
+
+  testArtifacts
 }
 
 dependencies {
@@ -52,16 +54,67 @@ dependencies {
   buildBootstrap group: "org.slf4j", name: "slf4j-api", version: "1.7.25"
   bootstrap group: "net.sourceforge.fmpp", name: "fmpp", version: "0.9.15"
 
+  compile group: "org.slf4j", name: "slf4j-api", version: "1.7.25"
   compile group: "org.testng", name: "testng", version: "6.9.9"
   testCompile group: "org.testng", name: "testng", version: "6.9.9"
   testCompile group: "org.slf4j", name: "slf4j-log4j12", version: "1.7.25"
-  testCompile project (path: ':test-utils', configuration: 'testArtifacts')
 }
 
+sourceSets {
+  testUtils {
+    compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.runtimeClasspath + sourceSets.main.output
+    runtimeClasspath += sourceSets.main.compileClasspath + output
+    java {
+      srcDirs = ['src/test-utils/java']
+    }
+  }
+
+  test {
+    java {
+      srcDirs = ['test']
+      compileClasspath += testUtils.output + compileClasspath + configurations.testRuntime
+      runtimeClasspath += testUtils.output + compileClasspath + configurations.testRuntime
+    }
+  }
+}
 
 javadoc {
  //TODO NOT DECIDE TO CONFIGURE THIS OR NOT
   options.use = false
+}
+
+// package test utility
+task testJar(type: Jar) {
+  from sourceSets.testUtils.output
+  from sourceSets.main.output
+}
+
+task packageTestJar(type: Jar) {
+  from sourceSets.testUtils.output
+  classifier = 'test'
+}
+
+task testUtilsJavadoc(type: Javadoc) {
+  source sourceSets.testUtils.allJava
+  classpath = sourceSets.main.output +  sourceSets.main.runtimeClasspath
+  destinationDir = reporting.file("${buildDir}/docs-test")
+}
+task packageTestJavadoc(type: Jar, dependsOn: ['testUtilsJavadoc']) {
+  from testUtilsJavadoc.destinationDir
+  //from sourceSets.testUtils.allJava
+  classifier = 'test-javadoc'
+}
+
+task packageTestSources(type: Jar, dependsOn: 'classes') {
+  from sourceSets.testUtils.allSource
+  classifier = 'test-sources'
+}
+
+artifacts {
+  testArtifacts testJar
+  archives packageTestJar
+  archives packageTestJavadoc
+  archives packageTestSources
 }
 
 // publish to maven

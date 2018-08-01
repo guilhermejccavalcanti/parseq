@@ -21,10 +21,10 @@ subprojects {
   targetCompatibility = 1.8
   archivesBaseName = project.name
 
-  if (it.name.startsWith('parseq')) { // all contrib modules
+  if (it.name.startsWith('parseq-')) { // all contrib modules
     dependencies {
-      compile project(":core")
-      testCompile project(path: ':test-utils', configuration: 'testArtifacts')
+      compile project(":parseq")
+      testCompile project(path: ':parseq', configuration: 'testArtifacts')
     }
   }
 
@@ -49,6 +49,7 @@ subprojects {
     }
   }
 
+
   javadoc {
     options.use = true
     options.author = true
@@ -68,7 +69,7 @@ subprojects {
 
   // Not include parseq-examples and parseq-legacy-examples, since we don't need to publish their jar files
   afterEvaluate {
-    if ((it.name.startsWith('parseq') && !it.name.endsWith('examples')) || it.name.startsWith('core')) {
+    if ((it.name.startsWith('parseq') && !it.name.endsWith('examples'))) {
       artifacts {
         archives jar
         archives packageJavadoc
@@ -93,13 +94,13 @@ subprojects {
         // pom signature
         beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 // TODO uncomment this
-//        repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-//          authentication(userName: sonatypeUsername, password: sonatypePassword)
-//        }
-//
-//        snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots") {
-//          authentication(userName: sonatypeUsername, password: sonatypePassword)
-//        }
+        repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+          authentication(userName: sonatypeUsername, password: sonatypePassword)
+        }
+
+        snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots") {
+          authentication(userName: sonatypeUsername, password: sonatypePassword)
+        }
 
         //TODO DELETE USE LOCAL REPO
         repository(url: "file:/Users/jguan/Desktop/exper") {
@@ -131,23 +132,37 @@ subprojects {
   }
 }
 
-
-task runTracevisServer (dependsOn:':parseq-tracevis-server:build') << {
+task runTracevisServer (dependsOn:':parseq-tracevis-server:build') {
   description 'Start trace visualization server for observing the execution of tasks.'
 
-  def dotLocation = '/usr/local/bin/dot'
-  def tracevisJar = "${projectDir}/contrib/parseq-tracevis-server/build/libs/parseq-tracevis-server-" + version + '-jar-with-dependencies.jar'
-
-  File docFile = new File(dotLocation)
-  if (docFile.exists()) {
-    javaexec {
-      main="-jar";
-      args = [
-          tracevisJar,
-          dotLocation
-      ]
+  doLast {
+    // get dot path in local machine, before running this task, please install graphviz in your machine
+    try {
+      new ByteArrayOutputStream().withStream { os ->
+        def result = exec {
+          executable = 'which'
+          args = ["dot"]
+          standardOutput = os
+        }
+        ext.dotLocation = os.toString().trim()
+      }
+    } catch (Exception e) {
+      throw new Exception("Can not find dot tools, please install it or check the docLocation!")
     }
-  } else {
-    logger.error('Can not find dot tools, please install it or check the docLocation!')
+
+    def tracevisJar = "${projectDir}/subprojects/parseq-tracevis-server/build/libs/parseq-tracevis-server-" + version + '-jar-with-dependencies.jar'
+
+    File docFile = new File(dotLocation)
+    if (docFile.exists()) {
+      javaexec {
+        main="-jar"
+        args = [
+            tracevisJar,
+            dotLocation
+        ]
+      }
+    } else {
+      logger.error('Can not find dot tools, please install it or check the docLocation!')
+    }
   }
 }
