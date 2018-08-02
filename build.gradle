@@ -87,26 +87,27 @@ subprojects {
     sign configurations.archives
   }
 
-  // publish to maven
-  uploadArchives {
+  // publish to maven and local ivy repo
+  uploadArchives {    
     repositories {
+      ivy { url "file:$rootDir/build/ivy-repo" }
+      
       mavenDeployer {
         // pom signature
         beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-// TODO uncomment this
-        repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-          authentication(userName: sonatypeUsername, password: sonatypePassword)
-        }
 
-        snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots") {
-          authentication(userName: sonatypeUsername, password: sonatypePassword)
-        }
+        if (project.hasProperty('ossRelease')) {
+          repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+            authentication(userName: sonatypeUsername, password: sonatypePassword)
+          }
 
-        //TODO DELETE USE LOCAL REPO
-        repository(url: "file:/Users/jguan/Desktop/exper") {
-          authentication(userName: sonatypeUsername, password: sonatypePassword)
+          snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots") {
+            authentication(userName: sonatypeUsername, password: sonatypePassword)
+          }
         }
-
+        
+        //Useful for local testing. If not useful, we should delete this line:
+        repository(url: "file:$rootDir/build/mvn-repo")
 
         pom.project {
           name project.name
