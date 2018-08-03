@@ -21,10 +21,9 @@ subprojects {
   targetCompatibility = 1.8
   archivesBaseName = project.name
 
-  if (it.name.startsWith('parseq-')) { // all contrib modules
+  if (it.name.startsWith('parseq-') && !it.name.equals("parseq-lambda-names")) { // all contrib modules
     dependencies {
       compile project(":parseq")
-      testCompile project(path: ':parseq', configuration: 'testArtifacts')
     }
   }
 
@@ -88,10 +87,10 @@ subprojects {
   }
 
   // publish to maven and local ivy repo
-  uploadArchives {    
+  uploadArchives {
     repositories {
       ivy { url "file:$rootDir/build/ivy-repo" }
-      
+
       mavenDeployer {
         // pom signature
         beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
@@ -105,7 +104,7 @@ subprojects {
             authentication(userName: sonatypeUsername, password: sonatypePassword)
           }
         }
-        
+
         //Useful for local testing. If not useful, we should delete this line:
         repository(url: "file:$rootDir/build/mvn-repo")
 

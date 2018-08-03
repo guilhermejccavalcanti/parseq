@@ -144,7 +144,7 @@
   </target>
 
   <target name="tar-tracevis" depends="prepare, dist-tracevis" description="Creates a tarball of the tracevis tool">
-    <copy file="${tools.dir}/tool-tracevis/dist/parseq-tracevis.tar.gz" tofile="${dist.dir}/parseq-tracevis-${version}.tar.gz"/>
+    <copy file="/subprojects/parseq-tracevis/dist/parseq-tracevis.tar.gz" tofile="${dist.dir}/parseq-tracevis-${version}.tar.gz"/>
   </target>
 
   <target name="doc" description="Build the javadoc." depends="build-src">
@@ -255,7 +255,7 @@
   <target name="clean" description="Cleans build and dist dirs">
     <delete dir="${build.dir}" />
     <delete dir="${dist.dir}" />
-    <make dir="${tools.dir}/tool-tracevis" >
+    <make dir="${tools.dir}/parseq-tracevis" >
       <args>
         <arg value="clean" />
       </args>
@@ -266,7 +266,7 @@
   </target>
 
   <target name="test-tracevis" unless="no.test.tracevis" description="Run visualization tests">
-    <make dir="${tools.dir}/tool-tracevis">
+    <make dir="${tools.dir}/parseq-tracevis">
       <args>
         <arg value="test" />
       </args>
@@ -274,7 +274,7 @@
   </target>
 
   <target name="dist-tracevis" description="Builds the tracevis package">
-    <make dir="${tools.dir}/tool-tracevis">
+    <make dir="${tools.dir}/parseq-tracevis">
       <args>
         <arg value="dist" />
       </args>

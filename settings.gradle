@@ -12,7 +12,7 @@ def modules = [ /* the name of the modules to use */
     'parseq-tracevis-server',
     'parseq-zk-client',
     'parseq', // core part code, including test utility
-    'tool-tracevis' // trace visualization tools
+    'parseq-tracevis' // trace visualization tools
 ]
 
 

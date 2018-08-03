@@ -54,15 +54,15 @@ dependencies {
   buildBootstrap group: "org.slf4j", name: "slf4j-api", version: "1.7.25"
   bootstrap group: "net.sourceforge.fmpp", name: "fmpp", version: "0.9.15"
 
-  compile group: "org.slf4j", name: "slf4j-api", version: "1.7.25"
-  compile group: "org.testng", name: "testng", version: "6.9.9"
-  testCompile group: "org.testng", name: "testng", version: "6.9.9"
+  //compile group: "org.slf4j", name: "slf4j-api", version: "1.7.25"
+  buildBootstrap group: "org.testng", name: "testng", version: "6.9.9"
+  //testCompile group: "org.testng", name: "testng", version: "6.9.9"
   testCompile group: "org.slf4j", name: "slf4j-log4j12", version: "1.7.25"
 }
 
 sourceSets {
   testUtils {
-    compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.runtimeClasspath + sourceSets.main.output
+    compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.runtimeClasspath + configurations.buildBootstrap +sourceSets.main.output
     runtimeClasspath += sourceSets.main.compileClasspath + output
     java {
       srcDirs = ['src/test-utils/java']
